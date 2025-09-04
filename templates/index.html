@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>미큐2기 - 저작권 걸렷던 배우 리스트</title>
+    <title>미큐 2기 - 저작권 배우 리스트</title>
     <style>
         body { font-family: sans-serif; max-width: 900px; margin: auto; padding: 20px; line-height: 1.6; background-color: #f4f4f4; }
         .header { display: flex; justify-content: space-between; align-items: center; }
@@ -11,11 +11,13 @@
         .post-list { list-style: none; padding: 0; }
         .post-item { background: #fff; margin-bottom: 20px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; gap: 20px; }
         .post-image { max-width: 150px; height: 150px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
-        /* ▼▼▼ 레이아웃 깨짐 방지 코드가 다시 추가되었습니다! ▼▼▼ */
-        .post-content { flex-grow: 1; overflow-wrap: break-word; }
+        .post-content { flex-grow: 1; min-width: 0; /* flex 자식 요소의 기본 너비 문제를 해결 */ }
         .post-content h3 { margin-top: 0; }
-        .post-content a { color: #007BFF; text-decoration: none; }
-        .post-content p { white-space: pre-wrap; }
+        .post-content p { white-space: pre-wrap; margin-bottom: 5px; }
+        /* --- CSS 수정 --- */
+        /* a 태그에 직접 줄바꿈 규칙을 적용하여 긴 주소가 깨지지 않도록 합니다. */
+        .post-content a { color: #007BFF; text-decoration: none; word-break: break-all; }
+        /* --- CSS 수정 끝 --- */
         .form-section { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         input[type="text"], input[type="url"], input[type="password"], textarea { width: calc(100% - 20px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
         input[type="file"] { margin-bottom: 10px; }
@@ -63,10 +65,13 @@
                 <p><strong>메모:</strong><br>{{ post.memo }}</p>
                 <small><strong>작성자:</strong> {{ post.author }}</small>
                 
-                <div class.actions">
+                <!-- --- HTML 수정 --- -->
+                <!-- 이전 코드의 class.actions 오타를 class="actions"로 수정했습니다. -->
+                <div class="actions">
                     <button class="edit" onclick="showEditModal({{ post.id }}, '{{ post.actor_name }}', '{{ post.link_url or '' }}', '{{ post.memo or '' }}', '{{ post.author }}')">수정하기</button>
                     <button class="delete" onclick="showDeleteModal({{ post.id }})">삭제하기</button>
                 </div>
+                <!-- --- HTML 수정 끝 --- -->
             </div>
         </li>
         {% else %}
