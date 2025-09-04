@@ -13,14 +13,14 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB 파일 사이즈 제한
 
 # 데이터베이스 설정 (Render.com 환경 변수 사용)
-# 로컬 테스트 시: 'sqlite:///board.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///board.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'supersecretkey'  # 실제 배포 시에는 강력한 키로 변경
+app.secret_key = 'supersecretkey'
 
 db = SQLAlchemy(app)
 
 # --- 데이터베이스 모델 ---
+# 테이블의 '설계도'인 모델 클래스를 먼저 정의합니다.
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     actor_name = db.Column(db.String(100), nullable=False)
@@ -32,6 +32,14 @@ class Post(db.Model):
 
     def __repr__(self):
         return f'<Post {self.actor_name}>'
+
+# =================================================================
+# ▼▼▼ 이 위치가 올바른 위치입니다! ▼▼▼
+# 모델(테이블 설계도) 정의가 모두 끝난 후, 테이블을 생성합니다.
+with app.app_context():
+    db.create_all()
+# ▲▲▲ 여기까지 ▲▲▲
+# =================================================================
 
 # --- 헬퍼 함수 ---
 def hash_password(password):
@@ -63,7 +71,6 @@ def add_post():
     image_filename = None
     if image and image.filename != '':
         image_filename = secure_filename(image.filename)
-        # 업로드 폴더가 없으면 생성
         if not os.path.exists(app.config['UPLOAD_FOLDER']):
             os.makedirs(app.config['UPLOAD_FOLDER'])
         image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
@@ -97,15 +104,13 @@ def edit_post(post_id):
     post.memo = request.form.get('memo')
     post.author = request.form.get('author')
     
-    # 이미지 파일이 새로 첨부된 경우
     image = request.files.get('image')
     if image and image.filename != '':
-        # 기존 이미지 파일 삭제 (선택적)
         if post.image_filename:
             try:
                 os.remove(os.path.join(app.config['UPLOAD_FOLDER'], post.image_filename))
             except OSError:
-                pass # 파일이 없어도 무시
+                pass
         
         image_filename = secure_filename(image.filename)
         image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
@@ -123,12 +128,11 @@ def delete_post():
     post = Post.query.get_or_404(post_id)
 
     if post.password_hash == hash_password(password):
-        # 이미지 파일 삭제
         if post.image_filename:
             try:
                 os.remove(os.path.join(app.config['UPLOAD_FOLDER'], post.image_filename))
             except OSError:
-                 pass # 파일이 없어도 무시
+                 pass
         
         db.session.delete(post)
         db.session.commit()
@@ -138,9 +142,6 @@ def delete_post():
     
     return redirect(url_for('index'))
 
-# =======================================================
-# ▼▼▼ 이 부분을 새로 추가해 주세요 ▼▼▼
-# Render 서버에서 앱이 시작될 때 테이블을 생성하기 위한 코드
-with app.app_context():
-    db.create_all()
-# ▲▲▲ 여기까지 추가 ▲▲▲
+# --- 애플리케이션 실행 (로컬 테스트용) ---
+if __name__ == '__main__':
+    app.run(debug=True)
