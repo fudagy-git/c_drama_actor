@@ -70,7 +70,7 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        if request.form.get('password') == '미쿠':
+        if request.form.get('password') == 'micyu':
             session['logged_in'] = True
             return redirect(url_for('index'))
         else:
