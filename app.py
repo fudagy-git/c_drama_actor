@@ -138,8 +138,9 @@ def delete_post():
     
     return redirect(url_for('index'))
 
-# --- 애플리케이션 실행 ---
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # 애플리케이션 실행 시 DB 테이블 자동 생성
-    app.run(debug=True)
+# =======================================================
+# ▼▼▼ 이 부분을 새로 추가해 주세요 ▼▼▼
+# Render 서버에서 앱이 시작될 때 테이블을 생성하기 위한 코드
+with app.app_context():
+    db.create_all()
+# ▲▲▲ 여기까지 추가 ▲▲▲
