@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>미큐 2기 - 저작권 걸린 배우 공유목록</title>
+    <title>원페이지 배우 게시판</title>
     <style>
         body { font-family: sans-serif; max-width: 900px; margin: auto; padding: 20px; line-height: 1.6; background-color: #f4f4f4; }
         .header { display: flex; justify-content: space-between; align-items: center; }
@@ -11,7 +11,7 @@
         .post-list { list-style: none; padding: 0; }
         .post-item { background: #fff; margin-bottom: 20px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; gap: 20px; }
         .post-image { max-width: 150px; height: 150px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
-        .post-content { flex-grow: 1; overflow-wrap: break-word; /* <-- 이 한 줄이 추가되었습니다! */ }
+        .post-content { flex-grow: 1; overflow-wrap: break-word; }
         .post-content h3 { margin-top: 0; }
         .post-content a { color: #007BFF; text-decoration: none; }
         .post-content p { white-space: pre-wrap; }
@@ -24,17 +24,21 @@
         .actions { margin-top: 10px; display: flex; gap: 10px; }
         .flash-messages { list-style: none; padding: 0; margin-bottom: 20px; }
         .flash-messages li { padding: 15px; margin-bottom: 10px; border-radius: 4px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        
+        /* 페이지네이션 스타일 */
+        .pagination { text-align: center; margin-top: 20px; margin-bottom: 20px; }
+        .pagination a, .pagination strong { display: inline-block; padding: 8px 12px; margin: 0 4px; border: 1px solid #ddd; text-decoration: none; color: #007BFF; border-radius: 4px; }
+        .pagination strong.current-page { background-color: #007BFF; color: white; border-color: #007BFF; }
+        .pagination a:hover { background-color: #f4f4f4; }
     </style>
 </head>
 <body>
 
-    <!-- 헤더와 로그아웃 링크 추가 -->
     <div class="header">
         <h1>원페이지 배우 게시판</h1>
         <a href="{{ url_for('logout') }}">로그아웃</a>
     </div>
 
-    <!-- 메시지 출력 -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <ul class="flash-messages">
@@ -47,7 +51,8 @@
 
     <h2>리스트</h2>
     <ul class="post-list">
-        {% for post in posts %}
+        <!-- posts.items 로 변경 -->
+        {% for post in posts.items %}
         <li class="post-item">
             {% if post.image_filename %}
                 <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="{{ post.actor_name }}" class="post-image">
@@ -70,6 +75,27 @@
         <li>게시글이 없습니다. 첫 번째 글을 작성해보세요!</li>
         {% endfor %}
     </ul>
+
+    <!-- 페이지네이션 링크 추가 -->
+    <div class="pagination">
+        {% if posts.has_prev %}
+            <a href="{{ url_for('index', page=posts.prev_num) }}">&laquo; 이전</a>
+        {% endif %}
+        {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                {% if posts.page == page_num %}
+                    <strong class="current-page">{{ page_num }}</strong>
+                {% else %}
+                    <a href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                ...
+            {% endif %}
+        {% endfor %}
+        {% if posts.has_next %}
+            <a href="{{ url_for('index', page=posts.next_num) }}">다음 &raquo;</a>
+        {% endif %}
+    </div>
 
     <hr>
 
