@@ -1,8 +1,9 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import hashlib
+from functools import wraps # --- 추가된 부분 ---
 
 # --- 기본 설정 ---
 app = Flask(__name__)
@@ -10,17 +11,17 @@ app = Flask(__name__)
 # 이미지 업로드 폴더 설정
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB 파일 사이즈 제한
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-# 데이터베이스 설정 (Render.com 환경 변수 사용)
+# 데이터베이스 설정
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///board.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'supersecretkey'
+# 세션 기능을 사용하려면 반드시 secret_key가 필요합니다.
+app.secret_key = 'a_very_strong_and_secret_key_12345' # 실제 운영 시에는 더 복잡하게 변경하세요.
 
 db = SQLAlchemy(app)
 
 # --- 데이터베이스 모델 ---
-# 테이블의 '설계도'인 모델 클래스를 먼저 정의합니다.
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     actor_name = db.Column(db.String(100), nullable=False)
@@ -33,29 +34,53 @@ class Post(db.Model):
     def __repr__(self):
         return f'<Post {self.actor_name}>'
 
-# =================================================================
-# ▼▼▼ 이 위치가 올바른 위치입니다! ▼▼▼
-# 모델(테이블 설계도) 정의가 모두 끝난 후, 테이블을 생성합니다.
+# 모델 정의가 모두 끝난 후 테이블 생성
 with app.app_context():
     db.create_all()
-# ▲▲▲ 여기까지 ▲▲▲
-# =================================================================
+
+# --- 로그인 데코레이터 (추가된 부분) ---
+# 로그인이 필요한 페이지에 붙여주는 기능
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # --- 헬퍼 함수 ---
 def hash_password(password):
-    """비밀번호를 해싱하는 함수"""
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 # --- 라우팅 ---
 @app.route('/')
+@login_required # --- 추가된 부분: 이제 이 페이지는 로그인이 필요합니다. ---
 def index():
-    """메인 페이지: 게시글 목록 출력"""
     posts = Post.query.order_by(Post.id.desc()).all()
     return render_template('index.html', posts=posts)
 
+# --- 로그인 라우트 (새로 추가된 부분) ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == '미쿠':
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        else:
+            flash('비밀번호가 올바르지 않습니다.')
+    return render_template('login.html')
+
+# --- 로그아웃 라우트 (새로 추가된 부분) ---
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
+
 @app.route('/add', methods=['POST'])
+@login_required # --- 추가된 부분: 글쓰기도 로그인이 필요합니다. ---
 def add_post():
-    """새 게시글 추가"""
+    # ... (기존 add_post 내용은 변경 없음) ...
     actor_name = request.form.get('actor_name')
     link_url = request.form.get('link_url')
     memo = request.form.get('memo')
@@ -90,8 +115,9 @@ def add_post():
     return redirect(url_for('index'))
 
 @app.route('/edit/<int:post_id>', methods=['POST'])
+@login_required # --- 추가된 부분: 수정도 로그인이 필요합니다. ---
 def edit_post(post_id):
-    """게시글 수정"""
+    # ... (기존 edit_post 내용은 변경 없음) ...
     post = Post.query.get_or_404(post_id)
     submitted_password = request.form.get('password')
 
@@ -121,8 +147,9 @@ def edit_post(post_id):
     return redirect(url_for('index'))
 
 @app.route('/delete', methods=['POST'])
+@login_required # --- 추가된 부분: 삭제도 로그인이 필요합니다. ---
 def delete_post():
-    """게시글 삭제"""
+    # ... (기존 delete_post 내용은 변경 없음) ...
     post_id = request.form.get('post_id')
     password = request.form.get('password')
     post = Post.query.get_or_404(post_id)
