@@ -61,7 +61,7 @@ def index():
     
     # .all() 대신 .paginate()를 사용합니다.
     # page: 현재 페이지 번호, per_page: 한 페이지당 보여줄 게시물 수
-    posts = Post.query.order_by(Post.id.desc()).paginate(page=page, per_page=5)
+    posts = Post.query.order_by(Post.id.desc()).paginate(page=page, per_page=10)
     
     return render_template('index.html', posts=posts)
 
