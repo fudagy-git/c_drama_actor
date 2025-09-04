@@ -54,9 +54,15 @@ def hash_password(password):
 
 # --- 라우팅 ---
 @app.route('/')
-@login_required # --- 추가된 부분: 이제 이 페이지는 로그인이 필요합니다. ---
+@login_required
 def index():
-    posts = Post.query.order_by(Post.id.desc()).all()
+    # URL에서 'page' 값을 가져오되, 없으면 기본값 1을 사용합니다. (예: /?page=2)
+    page = request.args.get('page', 1, type=int)
+    
+    # .all() 대신 .paginate()를 사용합니다.
+    # page: 현재 페이지 번호, per_page: 한 페이지당 보여줄 게시물 수
+    posts = Post.query.order_by(Post.id.desc()).paginate(page=page, per_page=5)
+    
     return render_template('index.html', posts=posts)
 
 # --- 로그인 라우트 (새로 추가된 부분) ---
