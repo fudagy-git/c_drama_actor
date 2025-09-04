@@ -54,8 +54,8 @@
     <ul class="post-list">
         {% for post in posts.items %}
         <li class="post-item">
-            {% if post.image_filename %}
-                <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="{{ post.actor_name }}" class="post-image">
+{% if post.image_filename %}
+    <img src="{{ post.image_filename }}" alt="{{ post.actor_name }}" class="post-image">
             {% else %}
                 <img src="https://via.placeholder.com/150" alt="No Image" class="post-image">
             {% endif %}
